@@ -7,7 +7,9 @@ const app = express();
 app.use(bodyParser.json());
 
 app.get('/', (req, res) => {
-	res.send({success: true})
+	res.send({
+		success: true
+	})
 });
 
 app.post('/', (req, res) => {
@@ -17,7 +19,9 @@ app.post('/', (req, res) => {
 
 	graph.execute();
 
-	res.send({ executing: true });
+	res.send({
+		success: true
+	});
 
 });
 
