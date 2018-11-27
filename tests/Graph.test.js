@@ -79,4 +79,133 @@ it("should work with a POST request", async () => {
   expect(response.status).toBe(200);
   expect(response.body).toHaveProperty("componentId");
   expect(response.body).toHaveProperty("portName");
+  expect(response.body.componentId).toBe("delay_1_success_log");
+});
+
+it("should work with a different inputs", async () => {
+  require("./../components").log = componentClasses.log;
+  require("./../components").delay = componentClasses.delay;
+  const requestInput = {
+    inputs: {
+      text_box_1: {
+        value: 2000
+      }
+    },
+    outputs: {},
+    components: [
+      "delay_1",
+      "delay_2",
+      "delay_1_success_log",
+      "delay_1_fail_log",
+      "delay_2_success_log",
+      "delay_2_fail_log"
+    ],
+    startComponent: "delay_1"
+  };
+  cloudboost.fetchGraphComponents = jest.fn().mockReturnValueOnce(
+    Promise.resolve(
+      graphComponents({
+        delay_1: {
+          Resolve: false
+        }
+      })
+    )
+  );
+
+  const response = await request(app)
+    .post("/")
+    .accept("application/json")
+    .send(requestInput);
+
+  expect(response).toBeDefined();
+  expect(response.status).toBe(200);
+  expect(response.body).toHaveProperty("componentId");
+  expect(response.body).toHaveProperty("portName");
+  expect(response.body.componentId).toBe("delay_1_fail_log");
+});
+
+it("should work with a change to delay_2", async () => {
+  require("./../components").log = componentClasses.log;
+  require("./../components").delay = componentClasses.delay;
+  const requestInput = {
+    inputs: {
+      text_box_1: {
+        value: 2000
+      }
+    },
+    outputs: {},
+    components: [
+      "delay_1",
+      "delay_2",
+      "delay_1_success_log",
+      "delay_1_fail_log",
+      "delay_2_success_log",
+      "delay_2_fail_log"
+    ],
+    startComponent: "delay_1"
+  };
+  cloudboost.fetchGraphComponents = jest.fn().mockReturnValueOnce(
+    Promise.resolve(
+      graphComponents({
+        delay_1: {
+          Resolve: false,
+          toComponentId: "delay_2_success_log"
+        }
+      })
+    )
+  );
+
+  const response = await request(app)
+    .post("/")
+    .accept("application/json")
+    .send(requestInput);
+
+  expect(response).toBeDefined();
+  expect(response.status).toBe(200);
+  expect(response.body).toHaveProperty("componentId");
+  expect(response.body).toHaveProperty("portName");
+  expect(response.body.componentId).toBe("delay_2_success_log");
+});
+
+it("should work with dyamic property data", async () => {
+  require("./../components").log = componentClasses.log;
+  require("./../components").delay = componentClasses.delay;
+  const requestInput = {
+    inputs: {
+      text_box_1: {
+        value: 4000
+      }
+    },
+    outputs: {},
+    components: [
+      "delay_1",
+      "delay_2",
+      "delay_1_success_log",
+      "delay_1_fail_log",
+      "delay_2_success_log",
+      "delay_2_fail_log"
+    ],
+    startComponent: "delay_1"
+  };
+  cloudboost.fetchGraphComponents = jest.fn().mockReturnValueOnce(
+    Promise.resolve(
+      graphComponents({
+        delay_1: {
+          Resolve: true,
+          WaitTime: "@text_box_1.value"
+        }
+      })
+    )
+  );
+
+  const response = await request(app)
+    .post("/")
+    .accept("application/json")
+    .send(requestInput);
+
+  expect(response).toBeDefined();
+  expect(response.status).toBe(200);
+  expect(response.body).toHaveProperty("componentId");
+  expect(response.body).toHaveProperty("portName");
+  expect(response.body.componentId).toBe("delay_1_success_log");
 });
