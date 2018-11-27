@@ -255,4 +255,7 @@ it("should get correct outputs", async () => {
   expect(response.status).toBe(200);
   expect(response.body).toHaveProperty("outputs");
   expect(get(response.body, "outputs.delay_1.Success.Message")).toBeDefined();
+  expect(get(response.body, "outputs.delay_1.Success.Message")).toBe(
+    "Successful so far"
+  );
 });
