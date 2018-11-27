@@ -1,4 +1,5 @@
 const { Graph } = require("flow-platform-sdk");
+const { get } = require("lodash");
 const componentClasses = require("./components");
 const resolveGraphs = require("./resolve-graphs");
 const api = require("./cloudboost");
@@ -9,7 +10,10 @@ module.exports = (req, res, next) => {
 
   executeGraphs(req.body)
     .then(result => {
-      res.json(result);
+      res.json({
+        componentId: get(result, "component.id"),
+        portName: get(result, "port.name")
+      });
     })
     .catch(next);
 };

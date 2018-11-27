@@ -1,108 +1,19 @@
-const DelayComponent = require("flow-delay-component");
-const StartComponent = require("flow-start-component");
-const LogComponent = require("flow-log-component");
+const request = require("supertest");
 const { Graph } = require("flow-platform-sdk");
+
+const DelayComponent = require("./components/flow-delay-component");
+const LogComponent = require("./components/flow-log-component");
+const StartComponent = require("flow-start-component");
+
+const app = require("./../app");
+const cloudboost = require("./../cloudboost");
+
+const { successJSON, failJSON, graphComponents } = require("./stubs");
 
 const componentClasses = {
   delay: DelayComponent,
   start: StartComponent,
   log: LogComponent
-};
-
-const successJSON = {
-  name: "graph",
-  data: [
-    {
-      id: "start",
-      graphComponentId: "start",
-      ports: [],
-      connections: [
-        {
-          fromPortId: "Start",
-          toComponentId: "delay_1"
-        }
-      ]
-    },
-    {
-      id: "delay_1",
-      graphComponentId: "delay",
-      connections: [
-        {
-          fromPortId: "Success",
-          toComponentId: "log_1"
-        },
-        {
-          fromPortId: "Fail",
-          toComponentId: "log_1"
-        }
-      ],
-      ports: [],
-      propertyData: {
-        Resolve: true,
-        WaitTime: 2000
-      }
-    },
-    {
-      id: "log_1",
-      graphComponentId: "log",
-      propertyData: {
-        Log: "@delay_1.Success.Message"
-      },
-      connections: []
-    }
-  ]
-};
-
-const failJSON = {
-  name: "graph",
-  data: [
-    {
-      id: "start",
-      graphComponentId: "start",
-      ports: [],
-      connections: [
-        {
-          fromPortId: "Start",
-          toComponentId: "delay_1"
-        }
-      ]
-    },
-    {
-      id: "delay_1",
-      graphComponentId: "delay",
-      connections: [
-        {
-          fromPortId: "Success",
-          toComponentId: "log_1"
-        },
-        {
-          fromPortId: "Fail",
-          toComponentId: "log_2"
-        }
-      ],
-      ports: [],
-      propertyData: {
-        Resolve: false,
-        WaitTime: 2000
-      }
-    },
-    {
-      id: "log_1",
-      graphComponentId: "log",
-      propertyData: {
-        Log: "@delay_1.Success.Message"
-      },
-      connections: []
-    },
-    {
-      id: "log_2",
-      graphComponentId: "log",
-      propertyData: {
-        Log: "Failed"
-      },
-      connections: []
-    }
-  ]
 };
 
 it("should execute without errors", done => {
@@ -133,4 +44,39 @@ it("should end with correct component", done => {
     expect(component.id).toEqual("log_2");
     done();
   });
+});
+
+it("should work with a POST request", async () => {
+  require("./../components").log = componentClasses.log;
+  require("./../components").delay = componentClasses.delay;
+  const requestInput = {
+    inputs: {
+      text_box_1: {
+        value: 2000
+      }
+    },
+    outputs: {},
+    components: [
+      "delay_1",
+      "delay_2",
+      "delay_1_success_log",
+      "delay_1_fail_log",
+      "delay_2_success_log",
+      "delay_2_fail_log"
+    ],
+    startComponent: "delay_1"
+  };
+  cloudboost.fetchGraphComponents = jest
+    .fn()
+    .mockReturnValueOnce(Promise.resolve(graphComponents()));
+
+  const response = await request(app)
+    .post("/")
+    .accept("application/json")
+    .send(requestInput);
+
+  expect(response).toBeDefined();
+  expect(response.status).toBe(200);
+  expect(response.body).toHaveProperty("componentId");
+  expect(response.body).toHaveProperty("portName");
 });

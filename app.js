@@ -14,4 +14,4 @@ app.use(bodyParser.json());
 
 app.post("/", controller);
 
-app.listen(1801, () => console.log("Listening on port 1801"));
+module.exports = app;
