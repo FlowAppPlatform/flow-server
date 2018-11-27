@@ -1,4 +1,4 @@
-const schema = {
+const graphSchema = {
   name: "graph-1",
   data: [
     {
@@ -78,4 +78,20 @@ const schema = {
       ]
     }
   ]
+};
+
+const requestInputSchema = {
+  inputs: {
+    [componentId]: {
+      [property_1]: "value_1",
+      [property_2]: "value_2"
+    }
+  },
+  components: ["component_1", "component_2"],
+  startComponent: "component_1",
+  outputs: {
+    [componentId]: {
+      [portId]: ["property_1", "property_2"]
+    }
+  }
 };

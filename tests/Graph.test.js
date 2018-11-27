@@ -1,5 +1,6 @@
 const request = require("supertest");
 const { Graph } = require("flow-platform-sdk");
+const { get } = require("lodash");
 
 const DelayComponent = require("./components/flow-delay-component");
 const LogComponent = require("./components/flow-log-component");
@@ -77,9 +78,9 @@ it("should work with a POST request", async () => {
 
   expect(response).toBeDefined();
   expect(response.status).toBe(200);
-  expect(response.body).toHaveProperty("componentId");
-  expect(response.body).toHaveProperty("portName");
-  expect(response.body.componentId).toBe("delay_1_success_log");
+  expect(response.body).toHaveProperty("lastComponentId");
+  expect(response.body).toHaveProperty("lastPortName");
+  expect(response.body.lastComponentId).toBe("delay_1_success_log");
 });
 
 it("should work with a different inputs", async () => {
@@ -119,9 +120,9 @@ it("should work with a different inputs", async () => {
 
   expect(response).toBeDefined();
   expect(response.status).toBe(200);
-  expect(response.body).toHaveProperty("componentId");
-  expect(response.body).toHaveProperty("portName");
-  expect(response.body.componentId).toBe("delay_1_fail_log");
+  expect(response.body).toHaveProperty("lastComponentId");
+  expect(response.body).toHaveProperty("lastPortName");
+  expect(response.body.lastComponentId).toBe("delay_1_fail_log");
 });
 
 it("should work with a change to delay_2", async () => {
@@ -162,9 +163,9 @@ it("should work with a change to delay_2", async () => {
 
   expect(response).toBeDefined();
   expect(response.status).toBe(200);
-  expect(response.body).toHaveProperty("componentId");
-  expect(response.body).toHaveProperty("portName");
-  expect(response.body.componentId).toBe("delay_2_success_log");
+  expect(response.body).toHaveProperty("lastComponentId");
+  expect(response.body).toHaveProperty("lastPortName");
+  expect(response.body.lastComponentId).toBe("delay_2_success_log");
 });
 
 it("should work with dyamic property data", async () => {
@@ -205,7 +206,53 @@ it("should work with dyamic property data", async () => {
 
   expect(response).toBeDefined();
   expect(response.status).toBe(200);
-  expect(response.body).toHaveProperty("componentId");
-  expect(response.body).toHaveProperty("portName");
-  expect(response.body.componentId).toBe("delay_1_success_log");
+  expect(response.body).toHaveProperty("lastComponentId");
+  expect(response.body).toHaveProperty("lastPortName");
+  expect(response.body.lastComponentId).toBe("delay_1_success_log");
+});
+
+it("should get correct outputs", async () => {
+  require("./../components").log = componentClasses.log;
+  require("./../components").delay = componentClasses.delay;
+  const requestInput = {
+    inputs: {
+      text_box_1: {
+        value: 4000
+      }
+    },
+    outputs: {
+      delay_1: {
+        Success: ["Message"]
+      }
+    },
+    components: [
+      "delay_1",
+      "delay_2",
+      "delay_1_success_log",
+      "delay_1_fail_log",
+      "delay_2_success_log",
+      "delay_2_fail_log"
+    ],
+    startComponent: "delay_1"
+  };
+  cloudboost.fetchGraphComponents = jest.fn().mockReturnValueOnce(
+    Promise.resolve(
+      graphComponents({
+        delay_1: {
+          Resolve: true,
+          WaitTime: "@text_box_1.value"
+        }
+      })
+    )
+  );
+
+  const response = await request(app)
+    .post("/")
+    .accept("application/json")
+    .send(requestInput);
+
+  expect(response).toBeDefined();
+  expect(response.status).toBe(200);
+  expect(response.body).toHaveProperty("outputs");
+  expect(get(response.body, "outputs.delay_1.Success.Message")).toBeDefined();
 });

@@ -1,5 +1,5 @@
-const { get, each, extend } = require("lodash");
-module.exports = async function resolveGraphs({ components, inputs }) {
+const { get, each, extend, reduce } = require("lodash");
+exports.resolveInputs = async ({ components, inputs }) => {
   return components.map(component => {
     const propertyData = get(component, "propertyData", {});
     each(propertyData, (property, key) => {
@@ -14,4 +14,31 @@ module.exports = async function resolveGraphs({ components, inputs }) {
       return component;
     }
   });
+};
+
+exports.resolveOutputs = async (graph, outputs) => {
+  const resolved = {};
+  each(outputs, (ports, componentId) => {
+    resolved[componentId] = {};
+    const component = graph.getComponent(componentId);
+    if (!component) {
+      return false;
+    }
+    each(ports, (properties, portId) => {
+      resolved[componentId][portId] = {};
+      const port = component.getPort(portId);
+      if (!port) {
+        return false;
+      }
+      resolved[componentId][portId] = reduce(
+        properties,
+        (acc, propertyId) => {
+          acc[propertyId] = port.getProperty(propertyId);
+          return acc;
+        },
+        {}
+      );
+    });
+  });
+  return resolved;
 };

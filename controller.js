@@ -1,7 +1,7 @@
 const { Graph } = require("flow-platform-sdk");
 const { get } = require("lodash");
 const componentClasses = require("./components");
-const resolveGraphs = require("./resolve-graphs");
+const { resolveInputs, resolveOutputs } = require("./resolve-graphs");
 const api = require("./cloudboost");
 
 module.exports = (req, res, next) => {
@@ -9,10 +9,11 @@ module.exports = (req, res, next) => {
   const { components, inputs, outputs, appId } = req.body;
 
   executeGraphs(req.body)
-    .then(result => {
+    .then(({ result, outputs }) => {
       res.json({
-        componentId: get(result, "component.id"),
-        portName: get(result, "port.name")
+        lastComponentId: get(result, "component.id"),
+        lastPortName: get(result, "port.name"),
+        outputs
       });
     })
     .catch(next);
@@ -25,7 +26,7 @@ function executeGraphs({ components, inputs, outputs, startComponent, appId }) {
       .fetchGraphComponents(appId, components)
       // resolve dynamic properties
       .then(graphs => {
-        return resolveGraphs({ components: graphs, inputs });
+        return resolveInputs({ components: graphs, inputs });
       })
       .then(graphs => {
         const graph = new Graph("Graph");
@@ -37,7 +38,11 @@ function executeGraphs({ components, inputs, outputs, startComponent, appId }) {
           componentClasses
         );
         graph.execute();
-        graph.onComplete(resolve);
+        graph.onComplete(result => {
+          resolveOutputs(graph, outputs).then(resolvedOutputs => {
+            resolve({ result, outputs: resolvedOutputs });
+          });
+        });
       })
       .catch(reject);
   });
