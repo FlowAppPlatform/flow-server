@@ -33,7 +33,7 @@ exports.resolveOutputs = async (graph, outputs) => {
       resolved[componentId][portId] = reduce(
         properties,
         (acc, propertyId) => {
-          acc[propertyId] = port.getProperty(propertyId);
+          acc[propertyId] = port.getProperty(propertyId).data;
           return acc;
         },
         {}
